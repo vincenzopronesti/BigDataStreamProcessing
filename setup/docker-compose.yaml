@@ -1,0 +1,121 @@
+version: "2.1"
+services:
+  flink_client:
+    build: ../docker/client-image
+    image: apache-flink-client
+    container_name: client
+    command: "/bin/bash"
+    depends_on:
+      - jobmanager
+      - kafka0
+    volumes:
+      - ./conf:/opt/flink/conf # flink configuration
+      - ./script:/script # kafka code (topics creation) and 2 scritps to run the queries
+      - ./data:/data # input data
+    environment:
+      - JOB_MANAGER_RPC_ADDRESS=jobmanager
+    stdin_open: true 
+    tty: true
+
+  jobmanager:
+    image: flinkmonitor 
+    command: "jobmanager.sh start-foreground"
+    ports:
+      - 8081:8081
+      - 9249:9249
+    volumes:
+      - ./conf:/opt/flink/conf
+      # - flink-checkpoints-directory:/tmp/flink-checkpoints-directory
+      # - /tmp/flink-savepoints-directory:/tmp/flink-savepoints-directory
+    environment:
+      - JOB_MANAGER_RPC_ADDRESS=jobmanager
+    stdin_open: true 
+    tty: true
+
+  taskmanager1:
+    image: flinkmonitor
+    depends_on:
+      - jobmanager
+    command: "taskmanager.sh start-foreground"
+    ports:
+      - 9250:9249
+    volumes:
+      - ./conf:/opt/flink/conf
+      # - flink-checkpoints-directory:/tmp/flink-checkpoints-directory
+      # - /tmp/flink-savepoints-directory:/tmp/flink-savepoints-directory
+    environment:
+      - JOB_MANAGER_RPC_ADDRESS=jobmanager
+    stdin_open: true 
+    tty: true
+  taskmanager2:
+    image: flinkmonitor
+    depends_on:
+      - jobmanager
+    command: "taskmanager.sh start-foreground"
+    ports:
+      - 9251:9249
+    volumes:
+      - ./conf:/opt/flink/conf
+      # - flink-checkpoints-directory:/tmp/flink-checkpoints-directory
+      # - /tmp/flink-savepoints-directory:/tmp/flink-savepoints-directory
+    environment:
+      - JOB_MANAGER_RPC_ADDRESS=jobmanager
+  taskmanager3:
+    image: flinkmonitor
+    depends_on:
+      - jobmanager
+    command: "taskmanager.sh start-foreground"
+    ports:
+      - 9252:9249
+    volumes:
+      - ./conf:/opt/flink/conf
+      # - flink-checkpoints-directory:/tmp/flink-checkpoints-directory
+      # - /tmp/flink-savepoints-directory:/tmp/flink-savepoints-directory
+    environment:
+      - JOB_MANAGER_RPC_ADDRESS=jobmanager
+
+  zookeeper:
+    image: zookeeper
+    container_name: zookeeper
+    restart: always
+    ports:
+      - "2181:2181"
+      - "2888:2888" 
+      - "3888:3888"
+    tty: false
+    stdin_open: false
+
+  kafka0:
+    image: effeerre/kafka
+    container_name: kafka0
+    depends_on:
+      - zookeeper
+    links:
+      - zookeeper
+    ports:
+     - "9092:9092"
+    environment:
+      - BROKER_ID=0
+    stdin_open: true 
+    tty: true
+
+  prometheus:
+    image: prom/prometheus:v2.19.1
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+    - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    - ./prometheus/flink.rules.yml:/etc/prometheus/flink.rules.yml
+
+  grafana:
+    image: grafana/grafana:6.1.3
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+    - GF_SECURITY_ADMIN_PASSWORD=flink
+    volumes:
+    - ./grafana/provisioning/:/etc/grafana/provisioning/
+# volumes:
+  # flink-checkpoints-directory:
