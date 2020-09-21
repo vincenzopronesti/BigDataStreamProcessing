@@ -6,7 +6,7 @@ This is a DSP project that uses Apache Flink to answer the following queries:
 2. Rank the three most common causes of delay in two-hours range 5:00-11:59 and 12:00-19:00.
 
 #### Code execution
-- Form the `docker/client-image` directory build the client Docker image executing `sh run.sh`.
+- From the `docker/client-image` directory build the client Docker image executing `sh run.sh`.
 - From the `flinkMetrics` directory execute `sh run.sh`.
 - From the `setup` directory run the following commands:
 	- `docker-compose up -d`
